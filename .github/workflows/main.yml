@@ -1,0 +1,23 @@
+name: Update games data
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch Epic and Steam
+        run: |
+          mkdir -p data
+          curl -s "https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=fr-FR&country=FR" -o data/epic.json
+          curl -s "https://store.steampowered.com/api/featuredcategories/?cc=fr&l=french" -H "User-Agent: Mozilla/5.0" -o data/steam.json
+          echo "Fetched at $(date -u +%Y-%m-%dT%H:%M:%SZ)" > data/last_update.txt
+      - name: Commit
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add data/
+          git diff --staged --quiet || git commit -m "chore: update games data"
+          git push
